@@ -10,12 +10,27 @@ from typing import Optional, Tuple
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Chemin du CSV depuis src/
-csv_path = os.path.join("..", "data", "locamoi_tous_types.csv")
+# dossier du script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# chemin du CSV
+csv_path = os.path.join(BASE_DIR, "..", "data", "locamoi_tous_types.csv")
+csv_path = os.path.abspath(csv_path)
+
+print("Chemin du CSV :", csv_path)  # juste pour vérifier
 
 # Chargement en DataFrame
 df = pd.read_csv(csv_path, encoding="utf-8-sig")
 
+#normalisation des noms de villes
+df["ville"] = (
+    df["ville"]
+    .str.lower()
+    .str.normalize("NFKD")  # supprime accents
+    .str.encode("ascii", errors="ignore")
+    .str.decode("utf-8")
+    .str.strip()
+)
 
 def remove_exact_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -333,8 +348,15 @@ def clean_extreme_values(df: pd.DataFrame) -> pd.DataFrame:
 
 df = clean_extreme_values(df)
 
-# Chemin de sauvegarde depuis src/
-output_path = os.path.join("..", "data", "locamoi_tous_types_clean.csv")
+# Dossier data pour la sauvegarde
+output_dir = os.path.join(BASE_DIR, "..", "data")
+os.makedirs(output_dir, exist_ok=True)  # crée le dossier s'il n'existe pas
+
+# Chemin complet du CSV nettoyé
+output_path = os.path.join(output_dir, "locamoi_tous_types_clean.csv")
+output_path = os.path.abspath(output_path)
+
+print("Chemin du CSV nettoyé :", output_path)
 
 # Sauvegarde du DataFrame
 df.to_csv(output_path, index=False, encoding="utf-8-sig")
